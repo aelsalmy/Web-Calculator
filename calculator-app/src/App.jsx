@@ -11,9 +11,38 @@ export const ACTIONS = {
   EVALUATE: 'evaluate'
 }
 
+//TODO: Handle Negative Numbers
+//TODO: Handle Multi-operand Operations
+
 const ERROR = 'SYNTAX ERROR'
 
+function evaluate(num1 , num2 , op){
+  let result;
+
+  switch (op){
+    case '+':
+      result = num1 + num2
+      break
+    case '-':
+      result = num1 - num2
+      break
+    case '*':
+      result = num1 * num2
+      break
+    case '÷':
+      result = num1 / num2
+      break
+    default:
+      result = num2
+  }
+
+  return result
+}
+
 function reducer(state = { currentOp , prevOp , operation} , {type , payload}){
+  
+  let result;
+
   switch(type) 
   {
     case ACTIONS.ADD_DIGIT:
@@ -43,11 +72,23 @@ function reducer(state = { currentOp , prevOp , operation} , {type , payload}){
       state.isError = false
       return{
         ...state,
-        currentOp: ''
+        currentOp: '',
+        prevOp: '',
+        operation: ''
       }
     case ACTIONS.CHOOSE_OPERATION:
       if (state.isError) {      //If syntax Error Present dont update your state
         return state
+      }
+
+      if (state.prevOp !== '' && state.currentOp !== ''){
+        result = evaluate(Number(state.prevOp) , Number(state.currentOp) , state.operation)
+        return{
+          ...state,
+          prevOp: `${result}`,
+          operation: `${payload.operation}`,
+          currentOp: ''
+        }
       }
       return{
           ...state,
@@ -56,24 +97,8 @@ function reducer(state = { currentOp , prevOp , operation} , {type , payload}){
           currentOp: ''
         }
     case ACTIONS.EVALUATE:
-      let result;
 
-      switch (state.operation){
-        case '+':
-          result = Number(state.prevOp) + Number(state.currentOp)
-          break
-        case '-':
-          result = Number(state.prevOp) - Number(state.currentOp)
-          break
-        case '*':
-          result = Number(state.prevOp) * Number(state.currentOp)
-          break
-        case '÷':
-          result = Number(state.prevOp) / Number(state.currentOp)
-          break
-        default:
-          result = Number(state.currentOp)
-      }
+      result = evaluate(Number(state.prevOp) , Number(state.currentOp) , state.operation)
 
       if(!result){
         state.isError = true
