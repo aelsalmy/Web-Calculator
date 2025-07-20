@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import './App.css'
-import DigitButton from './digitButton'
-import OperationButton from './OperationButton'
+import DigitButton from './components/digitButton'
+import OperationButton from './components/OperationButton'
 
 export const ACTIONS = {
   ADD_DIGIT: 'add-digit',
@@ -11,30 +11,50 @@ export const ACTIONS = {
   EVALUATE: 'evaluate'
 }
 
-function reducer(state = { currentOp: '' , prevOp: '' , operation: null} , {type , payload}){
+const ERROR = 'SYNTAX ERROR'
+
+function reducer(state = { currentOp , prevOp , operation} , {type , payload}){
   switch(type) 
   {
     case ACTIONS.ADD_DIGIT:
+      if (state.isError) {      //If syntax Error Present dont update your state
+        return state
+      }
+      if (state.isResult){
+        return{
+          ...state,
+          isResult: false,
+          currentOp: `${payload.digit}`
+        }
+      }
       return {
         ...state, 
         currentOp: `${state.currentOp || ''}${payload.digit}`,
       }
     case ACTIONS.DELETE_DIGIT:
+      if (state.isError) {      //If syntax Error Present dont update your state
+        return state
+      }
       return{
         ...state,
         currentOp: state.currentOp.slice(0 , -1)
       }
     case ACTIONS.CLEAR:
+      state.isError = false
       return{
         ...state,
         currentOp: ''
       }
     case ACTIONS.CHOOSE_OPERATION:
-      return{
-        prevOp: `${state.currentOp}`,
-        operation: `${payload.operation}`,
-        currentOp: ''
+      if (state.isError) {      //If syntax Error Present dont update your state
+        return state
       }
+      return{
+          ...state,
+          prevOp: `${state.currentOp}`,
+          operation: `${payload.operation}`,
+          currentOp: ''
+        }
     case ACTIONS.EVALUATE:
       let result;
 
@@ -52,14 +72,20 @@ function reducer(state = { currentOp: '' , prevOp: '' , operation: null} , {type
           result = Number(state.prevOp) / Number(state.currentOp)
           break
         default:
-          print('No Matches Found')
-          result = Number(state.prevOp)
+          result = Number(state.currentOp)
+      }
+
+      if(!result){
+        state.isError = true
+        console.log(state.isError)
       }
 
       return{
+        ...state,
         operation: '',
-        currentOp: `${result?result:'SYNTAX ERROR'}`,
-        prevOp: ''
+        currentOp: `${state.isError?ERROR:result}`,
+        prevOp: '',
+        isResult: true
       }
   }
   console.log(state)
@@ -68,11 +94,12 @@ function reducer(state = { currentOp: '' , prevOp: '' , operation: null} , {type
 
 function App() {
 
-  const [{currentOp , prevOp , operation , isError} , dispatch] = useReducer(reducer , {
+  const [{currentOp , prevOp , operation , isError , isResult} , dispatch] = useReducer(reducer , {
       currentOp: '' , 
       prevOp: '' , 
       operation: null,
-      isError: false
+      isError: false,
+      isResult: false
     }
   );
 
